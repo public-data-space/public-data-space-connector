@@ -1,0 +1,1166 @@
+openapi: 3.0.0
+info:
+  description: This OpenAPI specification describes the endpoints of the IDS Open Data Connector.
+  version: 1.0.0
+  title: IDS Open Data Connector API
+  contact:
+    name: Vincent Bohlen
+    email: vincent.bohlen@fokus.fraunhofer.de
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://localhost:8080
+  - url: http://odc-manager:8080
+tags:
+  - name: Authentification
+    description: Authentification at the connector to receive a token to use the protected API.
+  - name: Public
+    description: Public Connector Endpoints defined by the IDS Information Model.
+  - name: DataAssets
+    description: Endpoints managing the data assets.
+  - name: DataSources
+    description: Endpoints managing the data sources.
+  - name: Broker
+    description: Private Connector Endpoints managing the brokers.
+  - name: Configuration
+    description: Private Connector Endpoints managing the connector configuration.
+  - name: Adapter
+    description: Private Connector Endpoints managing the connector adapter apps.
+  - name: UI
+    description: Private Connector Endpoints used by the UI.
+paths:
+  /login:
+    post:
+      tags:
+        - Authentification
+      description: The endpoints returns a JWT which can be used to access the protected endpoints of the connector.
+      summary: Login
+      operationId: loginId
+      requestBody:
+        description: Login credentials in Json format
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        200:
+          description: Login successful.
+          content:
+            text/plain:
+              schema:
+                type: string
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  /about:
+    post:
+      tags:
+        - Public
+      description: Retrieve the self-description of the connector in IDS multipart format.
+      summary: Retrieve Connector Selfdescription
+      operationId: aboutPostId
+      requestBody:
+        description: An IDS DescriptionRequestMessage
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IDSMessage'
+      responses:
+        200:
+          description: Self-Description of the Connector in a DescriptionResponseMessage.
+          content:
+            multipart/form-data:
+              schema:
+                $ref: '#/components/schemas/IDSMessage'
+        500:
+          $ref: '#/components/responses/500InternalError'
+    get:
+      tags:
+        - Public
+      description: Retrieve the self-description of the connector in plain format.
+      summary: Retrieve Connector Selfdescription
+      operationId: aboutGetId
+      responses:
+        200:
+          description: Self-Description of the Connector
+          content:
+            application/json:
+              schema:
+                type: object
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  /data:
+    post:
+      tags:
+        - Public
+      description: Directly retrieve the data from the connector in IDS multipart format.
+      summary: Retrieve Data
+      operationId: dataPostId
+      requestBody:
+        description: An IDS ArtifactRequestMessage
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IDSMessage'
+      responses:
+        200:
+          description: Data wraped into an ArtifactResponseMessage.
+          content:
+            multipart/form-data:
+              schema:
+                $ref: '#/components/schemas/IDSMessage'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  /data/{id}:
+    get:
+      tags:
+        - Public
+      description: Directly retrieve the data from the connector in the actual data format.
+      summary: Retrieve Data
+      operationId: dataGetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: The data from the connector.
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  /infrastructure:
+    post:
+      tags:
+        - Public
+      description: Endpoint processing incoming IDS Multipart Messages.
+      summary: IDS Multipart Endpoint
+      operationId: infrastructureId
+      requestBody:
+        description: An IDS Multipart REquest Message (DescriptionRequestMessage, ArtifactResquestMessage)
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IDSMessage'
+      responses:
+        200:
+          description: An IDS Multipart Response Message (ArtifactResponseMessage, DescriptionResponseMessage).
+          content:
+            multipart/form-data:
+              schema:
+                $ref: '#/components/schemas/IDSMessage'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  # Jobs
+
+  /api/jobs/find/all:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - UI
+      description: Endpoint delivering all jobs in the connector. For UI purposes.
+      summary: Get all Jobs
+      operationId: jobGetId
+      responses:
+        200:
+          description: Array of the Jobs currently archived in the Connector.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/jobs/delete/all:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - UI
+      description: Endpoint deleting all jobs in the connector.
+      summary: Delete all Jobs
+      operationId: jobDeleteId
+      responses:
+        200:
+          description: Status of deletion at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  # Data Assets
+
+  /api/dataassets/counts:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - UI
+        - DataAssets
+      description: Endpoint retrieving the count of registered and published data assets of the connector.
+      summary: Get Data Asset counts
+      operationId: getCountsId
+      responses:
+        200:
+          description: Example
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountResult'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/all/publish:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to publish all Data Assets.
+      summary: Publish All Data Assets
+      operationId: publishAllDataAssetsId
+      responses:
+        200:
+          description: Status of publishing of all Datasets at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/all/unpublish:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to unpublish all Data Assets.
+      summary: Unpublish All Data Assets
+      operationId: unpublishAllDataAssetsId
+      responses:
+        200:
+          description: Status of unpublishing of all Datasets at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/{id}/publish:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to publish a Data Asset.
+      summary: Publish Data Asset
+      operationId: publishDataAssetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: Status of publishing the Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/{id}/unpublish:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to unpublish a Data Asset .
+      summary: Unpublish Data Asset
+      operationId: unpublishDataAssetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: Status of unpublishing the Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/{id}/delete:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to delete a data asset from the connector.
+      summary: Delete Data Asset
+      operationId: deleteDataAssetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: Status of deletion of the Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint returning all data assets registered in the connector.
+      summary: Get All Data Assets
+      operationId: getDataAssetsId
+      responses:
+        200:
+          description: List of data assets currently registered in the Connector.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataAsset'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/add:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint adding a data asset to the connector.
+      summary: Add Data Asset
+      operationId: addDataAssetId
+      requestBody:
+        description: Registration message of a Data Asset
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataAssetRegisterMessage'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataAssetRegisterMessage'
+      responses:
+        200:
+          description: Status of registering of the Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  # Data Sources
+
+  /api/datasources/add:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endpoint to add a Data Source.
+      summary: Add Data Source
+      operationId: dataSourceAddId
+      requestBody:
+        description: Registration message of a Data Asset
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceRegisterMessage'
+      responses:
+        200:
+          description: Status of registering of the Datasource at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/edit/{id}:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endpoint to edit a Data Source's information.
+      summary: Edit Data Source
+      operationId: dataSourceEditId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data source.
+      requestBody:
+        description: Registration message of a Data Asset
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceRegisterMessage'
+      responses:
+        200:
+          description: Status of registering of the Datasource at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/delete/{id}:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endpoint to delete a Data Source by ID.
+      summary: Delete Data Source
+      operationId: dataSourceDeleteId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data source.
+      responses:
+        200:
+          description: Status of deletion of the Datasource at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/findAll:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endoint to retrieve all Data Sources.
+      summary: Get all Data Sources
+      operationId: allDataSourceGetId
+      responses:
+        200:
+          description: Example
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/find/id/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endoint to retrieve Data Sources by ID.
+      summary: Get Data Source
+      operationId: datasourceGetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data source.
+      responses:
+        200:
+          description: Datasource Json
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    $ref: '#/components/schemas/DataSource'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/find/type/{type}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endpoint to retrieve Data Sources by Adapter Type.
+      summary: Get Data Source
+      operationId: dataSourceTypeGetId
+      parameters:
+        - in: path
+          name: type
+          schema:
+            type: string
+          required: true
+          description: Adapter type of the requested data source.
+      responses:
+        200:
+          description: Listing of Data Sources by requested type.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataSource'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/datasources/schema/type/{type}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endpoint to retrieve the data schema of the Data Source Adapter.
+      summary: Get Data Source Schema
+      operationId: dataSourceSchemaGetId
+      parameters:
+        - in: path
+          name: type
+          schema:
+            type: string
+          required: true
+          description: Adapter type of the requested data source.
+      responses:
+        200:
+          description: Listing of Data Sources by requested type.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  properties:
+                    type: string
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  #Broker
+
+  /api/broker/add:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Broker
+      description: Endpoint to add new Broker information to the Connector.
+      summary: Add Broker
+      operationId: brokerAddId
+      requestBody:
+        description: Information of the Broker the Connector should be registered to.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+      responses:
+        200:
+          description: Status of adding a Broker to the Conmnector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/broker/register/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Broker
+      description: Endpoint to register the Connector to a Broker.
+      summary: Register to Broker
+      operationId: brokerRegisterId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested broker.
+      responses:
+        200:
+          description: Status of registering the Connector at a Broker.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/broker/unregister/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Broker
+      description: Endpoint to unregister the Connector to a Broker.
+      summary: Unregister to Broker
+      operationId: brokerUnregisterId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested broker.
+      responses:
+        200:
+          description: Status of unregistering the Connector at a Broker.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/broker/findAll:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Broker
+      description: Endoint to retrieve all Brokers that are known to the Connector.
+      summary: Get Brokers
+      operationId: brokerGetId
+      responses:
+        200:
+          description: Status of unregistering the Connector at a Broker.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Broker'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/broker/delete/{id}:
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Broker
+      description: Endoint to delete a Broker from the Connector.
+      summary: Delete Broker
+      operationId: brokerDeleteId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested broker.
+      responses:
+        200:
+          description: Status of deleting broker information from the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  #Configuration
+
+  /api/configuration/get:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Configuration
+      description: Endoint to get the current Connector's configuration.
+      summary: Get Configuration
+      operationId: configGetId
+      responses:
+        200:
+          description: Current Configuration of the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Configuration'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/configuration/edit:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Configuration
+      description: Endoint to update the Connector's configuration.
+      summary: Edit Configuration
+      operationId: configEditId
+      requestBody:
+        description: The Configuration in JSON format.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Configuration'
+      responses:
+        200:
+          description: Status of deleting broker information from the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  #File Upload
+
+  /api/upload/file:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataSources
+      description: Endoint to upload a local file to the Connector and register it as a Data Asset.
+      summary: Add File
+      operationId: fileAddId
+      responses:
+        200:
+          description: Example
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  # Data Adapter Apps
+  /register:
+    post:
+      tags:
+        - Adapter
+      description: Register a new adapter on the connector
+      summary: Register adapter
+      operationId: registerId
+      requestBody:
+        description: Json Object with adapter name and address
+        required: true
+        content:
+         application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterMessage'
+      responses:
+        200:
+          description: Adapter registered
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+  /api/listAdapters:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Adapter
+      description: Endoint to get the Data Adapter's registered to the Connector.
+      summary: Get Adapters
+      operationId: adapterGetId
+      responses:
+        200:
+          description: List of registered Adapters.
+          content:
+            apoplication/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/images:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Adapter
+      description: Endoint to get the currently available docker images on the Connector's system.
+      summary: Get Docker Images
+      operationId: imagesGetId
+      responses:
+        200:
+          description: Metadata of the docker images running on the system.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dockerimage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/images/start:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Adapter
+      description: Endoint to start a Connector Adapter App.
+      summary: Start Adapter
+      operationId: adapterStartId
+      requestBody:
+        description: The Configuration in JSON format.
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        200:
+          description: Status of deleting broker information from the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/images/stop:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Adapter
+      description: Endoint to stop a Connector Adapter App.
+      summary: Stop Adapter
+      operationId: adapterStopId
+      requestBody:
+        description: The Configuration in JSON format.
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        200:
+          description: Status of deleting broker information from the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+
+components:
+  schemas:
+    Login:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    IDSMessage:
+      type: object
+      properties:
+        header:
+          type: object
+        payload:
+          type: object
+    StatusMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - success
+            - error
+            - info
+        text:
+          type: string
+    CountResult:
+      type: object
+      properties:
+        dacount:
+          type: integer
+        publishedcount:
+          type: integer
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        data:
+          type: object
+        status:
+          type: integer
+          format: int64
+        sourceid:
+          type: integer
+          format: int64
+        sourcetype:
+          type: string
+    Distribution:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publisher:
+          type: string
+        license:
+          type: string
+        filename:
+          type: string
+        filetype:
+          type: string
+        resourceid:
+          type: string
+        datasetid:
+          type: string
+    DataAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publisher:
+          type: string
+        license:
+          type: string
+        distributions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distribution'
+        status:
+          type: string
+          enum:
+            - UNAPPROVED
+            - APPROVED
+            - PUBLISHED
+        tags:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+        resourceid:
+          type: string
+        sourceid:
+          type: integer
+          format: int64
+    DataAssetRegisterMessage:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+          format: int64
+        data:
+          type: object
+        datasourcetype:
+          type: string
+        licenseurl:
+          type: string
+        licensetitle:
+          type: string
+    DataSourceRegisterMessage:
+      type: object
+      properties:
+        datasourcetype:
+          type: string
+        datasourcename:
+          type: string
+        data:
+          type: object
+    RegisterMessage:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: object
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+    DataSource:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        datasourcename:
+          type: string
+        data:
+          type: object
+        datasourcetype:
+          type: string
+    Broker:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        url:
+          type: string
+        status:
+          type: string
+          enum:
+            - REGISTERED
+            - UNREGISTERED
+    Configuration:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        country:
+          type: string
+        url:
+          type: string
+        maintainer:
+          type: string
+        curator:
+          type: string
+        title:
+          type: string
+    Dockerimage:
+      type: object
+      properties:
+        name:
+          type: string
+        uuid:
+          type: string
+        containers:
+          type: integer
+          format: int64
+  responses:
+    500InternalError:
+      description: Interaction failed due to internal problems.
+    401NotAuthorized:
+      description: Interaction failed due to authentification problems.
+  securitySchemes:
+    bearerAuth:
+      description: JWT Authentification Token to access the API
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,74 @@
+version: '3.5'
+services:
+  nginx:
+    build: ./nginx
+    depends_on:
+      - public-data-space-ui
+      - public-data-space-connector
+    ports:
+      - 80:80
+    networks:
+      - ids_connector
+
+  public-data-space-zenodo-adapter:
+    build: ./../public-data-space-zenodo-adapter
+    image: public-data-space-zenodo-adapter
+    volumes:
+      - public-data-space-zenodo-adapter_repo:/ids/repo
+    depends_on:
+      - public-data-space-connector
+    environment:
+      - REPOSITORY=/ids/repo/
+      - MANAGER_PORT=8080
+      - MANAGER_HOST=public-data-space-connector
+      - ROUTE_ALIAS=public-data-space-zenodo-adapter
+    networks:
+      - ids_connector
+
+  db:
+    image: postgres
+    volumes:
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - public-data-space-connector-database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=123456
+      - DATABASE_USER=ids
+      - DATABASE_USER_PW=ids
+    networks:
+      - ids_connector
+
+  public-data-space-connector:
+    build: ./
+    volumes:
+      - public-data-space-connector_repo:/ids/repo
+      - ./certs:/ids/certs
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - db
+    environment:
+      - FRONTEND_CONFIG={"username":"admin","password":"admin"}
+      - DB_CONFIG={"host":"db","port":5432,"database":"ids","user":"ids","password":"ids"}
+      - AUTH_CONFIG={"mode":"skip","keystorename":"my-keystore.jks", "keystorepassword":"my-password", "keystorealias":"connector-alias","truststorename":"truststore-name","dapsurl":"https://daps.aisec.fraunhofer.de/v2/", "dapsissuer":"https://daps.aisec.fraunhofer.de"}
+      - REPOSITORY=/ids/repo/
+      - INIT=true
+      - SERVICE_PORT=8080
+      - API_KEY=yourapikey
+    networks:
+      - ids_connector
+
+  public-data-space-ui:
+    build: ./../public-data-space-ui
+    environment:
+      - VUE_APP_BACKEND_BASE_URL=http://localhost
+      - VUE_APP_TITLE=IDS Open Data Konnektor
+    networks:
+      - ids_connector
+
+volumes:
+  public-data-space-zenodo-adapter_repo:
+  public-data-space-connector-database:
+  public-data-space-connector_repo:
+
+networks:
+  ids_connector:
+    name: ids_connector
