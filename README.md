@@ -7,7 +7,7 @@ b) ` mvn clean package `
 2. Clone and build the zenodo adapter \
 a) ` git clone git@gitlab.fokus.fraunhofer.de:public-data-space/public-data-space-zenodo-adapter.git ` \
 b) ` mvn clean package `
-3. Clone and build the frondend \
+3. Clone and build the frontend \
 a) ` git clone git@gitlab.fokus.fraunhofer.de:public-data-space/public-data-space-ui.git ` \
 b) ` npm install `
 
@@ -35,6 +35,6 @@ Run the following commands (inside the public-data-space-connector directory, ma
 2. ` docker-compose -f docker-compose_build.yml up -d public-data-space-connector ` 
 3. ` docker-compose -f docker-compose_build.yml up -d public-data-space-zenodo-adapter ` 
 4. ` docker-compose -f docker-compose_build.yml up -d public-data-space-ui ` 
-5. ` docker-compose -f docker-compose_build.yml  up -d nginx ` 
+5. ` docker-compose -f docker-compose_build.yml up -d nginx ` 
 
 Frontend is available at localhost/browse (username:admin, password:admin)
