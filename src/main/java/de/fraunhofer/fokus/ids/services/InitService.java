@@ -36,12 +36,15 @@ public class InitService{
 
 	private final JsonObject dataset = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
-			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("status","INTEGER").put("tags","TEXT[]")
-			.put("version","TEXT").put("sourceid","BIGINT").put("additionalmetadata","JSONB");
+			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("status","INTEGER")
+			.put("tags","TEXT[]").put("version","TEXT").put("sourceid","BIGINT")
+			.put("PID","TEXT").put("author","TEXT").put("data_access_level","TEXT")
+			.put("additionalmetadata","JSONB");
 
 	private final JsonObject distribution = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
 			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("filename","TEXT").put("filetype","TEXT")
+			.put("byte_size","INT")
 			.put("datasetid","TEXT").put("additionalmetadata","JSONB");
 
 	private final JsonObject datasource = new JsonObject().put("id","SERIAL")
