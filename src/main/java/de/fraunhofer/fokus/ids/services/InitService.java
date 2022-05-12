@@ -32,52 +32,66 @@ public class InitService{
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("username","TEXT")
-			.put("password","TEXT");
+			.put("password","TEXT")
+			.put("primary_key", "id");
 
 	private final JsonObject dataset = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
 			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("status","INTEGER")
 			.put("tags","TEXT[]").put("version","TEXT").put("sourceid","BIGINT")
-			.put("PID","TEXT").put("author","TEXT").put("data_access_level","TEXT")
-			.put("additionalmetadata","JSONB");
+			.put("pid","TEXT").put("author","TEXT").put("data_access_level","TEXT")
+			.put("additionalmetadata","JSONB")
+			.put("primary_key", "id").put("foreign_key", "sourceid").put("ref_key", "id")
+			.put("ref_table", "datasource");
 
 	private final JsonObject distribution = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
 			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("filename","TEXT").put("filetype","TEXT")
 			.put("byte_size","INT")
-			.put("datasetid","TEXT").put("additionalmetadata","JSONB");
+			.put("datasetid","TEXT").put("additionalmetadata","JSONB")
+			.put("primary_key", "id").put("foreign_key", "datasetid").put("ref_key", "id")
+			.put("ref_table", "dataset");
 
 	private final JsonObject datasource = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("datasourcename","TEXT")
 			.put("data","JSONB")
-			.put("datasourcetype","TEXT");
+			.put("datasourcetype","TEXT")
+			.put("primary_key", "id");
+
 	private final JsonObject job = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("data","JSONB")
 			.put("status","INTEGER")
 			.put("sourceid","BIGINT")
-			.put("sourcetype","TEXT");
+			.put("sourcetype","TEXT")
+			.put("primary_key", "id").put("foreign_key", "sourceid").put("ref_key", "id")
+			.put("ref_table", "datasource");
+
 	private final JsonObject broker = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("url","TEXT")
-			.put("status","TEXT");
+			.put("status","TEXT")
+			.put("primary_key", "id");
+
 	private final JsonObject configuration = new JsonObject().put("id","SERIAL")
 			.put("country","TEXT")
 			.put("url","TEXT")
 			.put("maintainer","TEXT")
 			.put("curator","TEXT")
-			.put("title","TEXT");
+			.put("title","TEXT")
+			.put("primary_key", "id");
 	
 	private final JsonObject adapters = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("name","TEXT")
 			.put("host","TEXT")
-			.put("port","INTEGER");
+			.put("port","INTEGER")
+			.put("primary_key", "id");
 	
 	//TODO do we need containers and images in the db??????
 	private final JsonObject containers = new JsonObject().put("id","SERIAL")
@@ -85,13 +99,15 @@ public class InitService{
 			.put("updated_at","TIMESTAMP")
 			.put("imageId","BIGINT")
 			.put("containerId","BIGINT")
-			.put("name","TEXT");
+			.put("name","TEXT")
+			.put("primary_key", "id");
 	
 	private final JsonObject images = new JsonObject()
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("uuid","BIGINT")
-			.put("imageId","BIGINT");
+			.put("imageId","BIGINT")
+			.put("primary_key", "imageId");
 	
 	
 	public InitService(Vertx vertx){

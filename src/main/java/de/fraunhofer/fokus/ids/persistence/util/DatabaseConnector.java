@@ -26,6 +26,12 @@ public class DatabaseConnector {
     private RowTransformer rowTransformer;
     private static final DatabaseConnector DBC = new DatabaseConnector();
 
+    private final String CREATE_PRIMARY_KEY = "PRIMARY KEY($1)";
+    private final String ADD_PRIMARY_KEY = "ADD PRIMARY KEY($1)";
+    private final String CREATE_FOREIGN_KEY = "CONSTRAINT $1 FOREIGN KEY($2) REFERENCES $3($4)";
+    private final String ADD_FOREIGN_KEY = "ADD CONSTRAINT $1 FOREIGN KEY($2) REFERENCES $3($4)";
+    private final String FOREIGN_KEY_RULES = "ON DELETE SET NULL ON UPDATE CASCADE";
+
     private DatabaseConnector() {
         this.rowTransformer = new RowTransformer();
     }
@@ -110,14 +116,18 @@ public class DatabaseConnector {
                             }
 
                         } else {
-                            String query = "CREATE TABLE IF NOT EXISTS "+tableName+ " (";
+                            String query = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
                             String columns  ="";
 
                             for (String key:keys){
-                                columns = columns+key+" "+columInfo.getString(key)+",";
+                                columns = columns + key + " " + columInfo.getString(key) + ",";
                             }
-                            columns = columns.substring(0,columns.length()-1);
-                            query = query+columns+")";
+
+                            query = query +
+                                    columns +
+                                    CREATE_PRIMARY_KEY.replace("$1", columInfo.getString("primary_key")) + "," +
+                                    this.getForeignKeyStatement(false, tableName, columInfo) + ")";
+
                             conn.query(query).execute(resultAsyncResult -> {
                                 if (resultAsyncResult.succeeded()) {
                                     resultHandler.handle(Future.succeededFuture(new ArrayList<>()));
@@ -143,7 +153,10 @@ public class DatabaseConnector {
         for (String key : columns) {
             updateQuery += "ADD COLUMN  IF NOT EXISTS " + key + " " + query.getString(key) + ",";
         }
-        connection.query(updateQuery.substring(0, updateQuery.length() - 1)).execute(add -> {
+        updateQuery += ADD_PRIMARY_KEY.replace("$1", query.getString("primary_key")) + "," +
+                this.getForeignKeyStatement(true, tableName, query);
+
+        connection.query(updateQuery).execute(add -> {
             if (add.succeeded()) {
                 LOGGER.info("Columns added");
                 resultHandler.handle(Future.succeededFuture(new ArrayList<>()));
@@ -154,5 +167,21 @@ public class DatabaseConnector {
                 connection.close();
             }
         });
+    }
+
+    private String getForeignKeyStatement(boolean tableExits, String tableName, JsonObject tableInfo){
+        String foreignKeyStatement;
+        if(tableExits)
+            foreignKeyStatement = ADD_FOREIGN_KEY;
+        else
+            foreignKeyStatement = CREATE_FOREIGN_KEY;
+
+        foreignKeyStatement = foreignKeyStatement.replace("$1", tableName +
+                "-" + tableInfo.getString("ref_key") + "-" + tableInfo.getString("ref_table"));
+        foreignKeyStatement = foreignKeyStatement.replace("$2", tableInfo.getString("foreign_key"));
+        foreignKeyStatement = foreignKeyStatement.replace("$3", tableInfo.getString("ref_table"));
+        foreignKeyStatement = foreignKeyStatement.replace("$4", tableInfo.getString("ref_key"));
+        foreignKeyStatement += " " + FOREIGN_KEY_RULES;
+        return foreignKeyStatement;
     }
 }
