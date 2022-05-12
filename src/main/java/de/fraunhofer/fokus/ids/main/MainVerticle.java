@@ -221,8 +221,7 @@ public class MainVerticle extends AbstractVerticle {
                                 dataAssetController.delete(Long.parseLong(routingContext.request().getParam("id")), result -> reply(result, routingContext.response())))
                         .addHandlerByOperationId("getDataAssetsId", routingContext ->
                                 dataAssetController.index(result -> reply(result, routingContext.response())))
-                        .addHandlerByOperationId("addDataAssetId", routingContext ->
-                                processDataAssetInformation(routingContext))
+                        .addHandlerByOperationId("addDataAssetId", this::processDataAssetInformation)
 
                         
                         // Data Sources

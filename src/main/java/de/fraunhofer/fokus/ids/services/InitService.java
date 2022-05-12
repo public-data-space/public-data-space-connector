@@ -32,8 +32,8 @@ public class InitService{
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("username","TEXT")
-			.put("password","TEXT")
-			.put("primary_key", "id");
+			.put("password","TEXT");
+			//.put("primary_key", "id");
 
 	private final JsonObject dataset = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
@@ -49,8 +49,9 @@ public class InitService{
 			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("filename","TEXT").put("filetype","TEXT")
 			.put("byte_size","INT")
 			.put("datasetid","TEXT").put("additionalmetadata","JSONB")
-			.put("primary_key", "id").put("foreign_key", "datasetid").put("ref_key", "id")
-			.put("ref_table", "dataset");
+			.put("primary_key", "id");
+			//.put("foreign_key", "datasetid").put("ref_key", "id")
+			//.put("ref_table", "dataset");
 
 	private final JsonObject datasource = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
@@ -97,17 +98,18 @@ public class InitService{
 	private final JsonObject containers = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
-			.put("imageId","BIGINT")
-			.put("containerId","BIGINT")
+			.put("imageid","BIGINT")
+			.put("containerid","BIGINT")
 			.put("name","TEXT")
-			.put("primary_key", "id");
+			.put("primary_key", "id").put("foreign_key", "imageid").put("ref_key", "imageid")
+			.put("ref_table", "images");
 	
 	private final JsonObject images = new JsonObject()
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("uuid","BIGINT")
-			.put("imageId","BIGINT")
-			.put("primary_key", "imageId");
+			.put("imageid","BIGINT")
+			.put("primary_key", "imageid");
 	
 	
 	public InitService(Vertx vertx){
@@ -139,6 +141,14 @@ public class InitService{
 		return queryFuture;
 	}
 
+	private Future<List<JsonObject>> setForeignKeys(String tableName, JsonObject tableInfo){
+		Promise<List<JsonObject>> queryPromise = Promise.promise();
+		Future<List<JsonObject>> queryFuture = queryPromise.future();
+		DatabaseConnector dbc = DatabaseConnector.getInstance();
+		dbc.createAddForeignKeys(tableName, tableInfo, queryFuture);
+		return queryFuture;
+	}
+
 	private void initTables(Handler<AsyncResult<Void>> resultHandler){
 
 		ArrayList<Future> list = new ArrayList<Future>() {{
@@ -155,6 +165,12 @@ public class InitService{
             //add containers and images from service docker 
             performUpdate(containers,"containers");
             performUpdate(images,"images");
+
+			//Set all Foreign keys#
+			//setForeignKeys("distribution", distribution);
+			setForeignKeys("dataset", dataset);
+			setForeignKeys("job", job);
+			setForeignKeys("containers", containers);
 		}};
 
 		CompositeFuture.all(list).onComplete( reply -> {
