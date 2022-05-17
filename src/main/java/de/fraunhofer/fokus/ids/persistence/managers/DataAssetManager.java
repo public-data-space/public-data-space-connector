@@ -13,6 +13,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.sqlclient.Tuple;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -85,7 +86,7 @@ public class DataAssetManager {
 				while(iterator.hasNext()){
 					Promise<Dataset> promise = Promise.promise();
 					datasetFutureList.add(promise.future());
-					Dataset da = Json.decodeValue(iterator.next().toString(), Dataset.class);
+					Dataset da = Json.decodeValue(this.buildDataAssetAdditionalData((JsonObject)iterator.next()), Dataset.class);
 					buildDataset(da, promise);
 				}
 				CompositeFuture.all(datasetFutureList).onComplete( ac -> {
@@ -111,13 +112,38 @@ public class DataAssetManager {
 	private void buildDataset(Dataset da, Handler<AsyncResult<Dataset>> next) {
 		databaseConnector.query(FINDDISTRIBUTIONBYDATASETID_QUERY, Tuple.tuple().addString(da.getResourceId()), reply2 -> {
 			if(reply2.succeeded()){
-				Set<Distribution> dists = reply2.result().stream().map(jO -> Json.decodeValue(jO.toString(), Distribution.class)).collect(Collectors.toSet());
+				Set<Distribution> dists = reply2.result().stream().map(jO ->
+						Json.decodeValue(this.buildDistributionAdditionalData(jO), Distribution.class)).collect(Collectors.toSet());
 				da.setDistributions(dists);
 				next.handle(Future.succeededFuture(da));
 			} else {
 				next.handle(Future.failedFuture(reply2.cause()));
 			}
 		});
+	}
+
+	private String buildDataAssetAdditionalData(JsonObject dataAsset){
+		String[] keys = {"pid", "author", "data_access_level"};
+		for(String s : keys){
+			if(dataAsset.containsKey(s)) {
+				JsonArray value = new JsonArray();
+				value.add(dataAsset.getString(s));
+				dataAsset.getJsonObject("additionalmetadata").put(s, value);
+				dataAsset.remove(s);
+			}
+		}
+		return dataAsset.toString();
+	}
+
+	private String buildDistributionAdditionalData(JsonObject distribution){
+		String additionalDataKey = "byte_size";
+		if(distribution.containsKey(additionalDataKey)) {
+			JsonArray value = new JsonArray();
+			value.add(distribution.getInteger(additionalDataKey).toString());
+			distribution.getJsonObject("additionalmetadata").put(additionalDataKey, value);
+			distribution.remove(additionalDataKey);
+		}
+		return distribution.toString();
 	}
 
 	public void findAll(Handler<AsyncResult<JsonArray>> resultHandler) {
