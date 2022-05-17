@@ -34,10 +34,10 @@ public class DataAssetManager {
 	private static final String COUNTPUBLISHED_QUERY = "SELECT COUNT(d) FROM Dataset d WHERE d.status = $1";
 	private static final String CHANGESTATUS_UPDATE = "UPDATE Dataset SET status = $1, updated_at = NOW() WHERE id = $2";
 	private static final String FINDDISTRIBUTIONBYDATASETID_QUERY = "SELECT * FROM Distribution WHERE datasetId = $1";
-	private static final String INSERT_DATASET = "INSERT INTO Dataset (created_at, updated_at, resourceid, license, title, description, publisher, status, tags, version, sourceid, additionalmetadata) " +
+	private static final String INSERT_DATASET = "INSERT INTO Dataset (created_at, updated_at, resourceid, license, title, description, publisher, status, tags, version, sourceid, pid, author, data_access_level, additionalmetadata) " +
+			"VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)";
+	private static final String INSERT_DISTRIBUTION = "INSERT INTO Distribution (created_at, updated_at, resourceid, license, title, description, publisher, filename, filetype, byte_size, datasetid, additionalmetadata) " +
 			"VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
-	private static final String INSERT_DISTRIBUTION = "INSERT INTO Distribution (created_at, updated_at, resourceid, license, title, description, publisher, filename, filetype, datasetid, additionalmetadata) " +
-			"VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)";
 
 	private static final String DELETE_DAT_UPDATE = "DELETE FROM dataset WHERE id = $1";
 	private static final String DELETE_DIST_UPDATE = "DELETE FROM distribution WHERE datasetid = $1";
@@ -161,6 +161,7 @@ public class DataAssetManager {
 	public void add(JsonObject dataAssetJson, Handler<AsyncResult<Void>> resultHandler) {
 
 		Dataset dataAsset = Json.decodeValue(dataAssetJson.toString(),Dataset.class);
+		JsonObject dataAssetAdditionalData = processAdditionalMetadata(dataAsset);
 
 		Tuple datasetParams = Tuple.tuple()
 				.addString(checkNull(dataAsset.getResourceId()))
@@ -171,7 +172,10 @@ public class DataAssetManager {
 				.addInteger(dataAsset.getStatus() == null ? DataAssetStatus.UNAPPROVED.ordinal() : dataAsset.getStatus().ordinal())
 				.addStringArray(dataAsset.getTags() == null ||dataAsset.getTags().isEmpty() ? new String[0] : dataAsset.getTags().toArray(new String[0]))
 				.addString(checkNull(dataAsset.getVersion()))
-				.addLong(dataAsset.getSourceId());
+				.addLong(dataAsset.getSourceId())
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("pid").getString(0)))
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("author").getString(0)))
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("data_access_level").getString(0)));
 
 				datasetParams.addValue(processAdditionalMetadata(dataAsset));
 
@@ -180,6 +184,7 @@ public class DataAssetManager {
 				LOGGER.error(datasetReply.cause());
 			} else {
 				for(Distribution distribution : dataAsset.getDistributions()){
+					JsonObject distributionAdditionalData = processAdditionalMetadata(distribution);
 
 					Tuple distributionParams = Tuple.tuple()
 							.addString(checkNull(distribution.getResourceId()))
@@ -189,6 +194,7 @@ public class DataAssetManager {
 							.addString(checkNull(distribution.getPublisher()))
 							.addString(checkNull(distribution.getFilename()))
 							.addString(checkNull(distribution.getFiletype()))
+							.addInteger(Integer.parseInt(checkNull(distributionAdditionalData.getJsonArray("byte_size").getString(0))))
 							.addString(checkNull(dataAsset.getResourceId()));
 
 					distributionParams.addValue(processAdditionalMetadata(distribution));
@@ -216,6 +222,8 @@ public class DataAssetManager {
 				}
 				jsonObj.put(pair.getKey(), array);
 				disIt.remove();
+				if(pair.getKey().equals("pid") || pair.getKey().equals("author") || pair.getKey().equals("data_access_level") || pair.getKey().equals("byte_size"))
+					resource.getAdditionalmetadata().remove(pair.getKey(), pair.getValue());
 			}
 		}
 		return jsonObj;

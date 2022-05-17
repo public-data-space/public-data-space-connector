@@ -102,9 +102,6 @@ public class DatabaseConnector {
                                 }
                             }
                             columns.removeAll(strings);
-                            System.out.println(rowSet.columnsNames());
-                            System.out.println("\n  DROP: " + dropColumns);
-                            System.out.println(keys);
                             if (!dropColumns.isEmpty()) {
                                 String dropQuery = "ALTER TABLE " + tableName + " " + dropColumns;
                                 conn.query(dropQuery.substring(0, dropQuery.length() - 1)).execute(delete -> {

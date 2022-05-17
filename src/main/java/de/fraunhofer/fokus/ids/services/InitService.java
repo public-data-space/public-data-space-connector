@@ -47,7 +47,7 @@ public class InitService{
 	private final JsonObject distribution = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
 			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("filename","TEXT").put("filetype","TEXT")
-			.put("byte_size","INT")
+			.put("byte_size","INTEGER")
 			.put("datasetid","TEXT").put("additionalmetadata","JSONB")
 			.put("primary_key", "id");
 			//.put("foreign_key", "datasetid").put("ref_key", "id")
@@ -144,8 +144,7 @@ public class InitService{
 	private Future<List<JsonObject>> setForeignKeys(String tableName, JsonObject tableInfo){
 		Promise<List<JsonObject>> queryPromise = Promise.promise();
 		Future<List<JsonObject>> queryFuture = queryPromise.future();
-		DatabaseConnector dbc = DatabaseConnector.getInstance();
-		dbc.createAddForeignKeys(tableName, tableInfo, queryFuture);
+		DatabaseConnector.getInstance().createAddForeignKeys(tableName, tableInfo, queryFuture);
 		return queryFuture;
 	}
 
