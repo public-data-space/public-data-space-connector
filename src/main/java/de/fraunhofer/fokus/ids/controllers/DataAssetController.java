@@ -278,6 +278,36 @@ public class DataAssetController {
 			}
 		});
 	}
+	
+	public void generateTags(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
+		dataAssetManager.findDatasetById(id, dataAssetReply -> {
+			if(dataAssetReply.succeeded()){
+				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
+				dataAssetManager.updateTagsFromDescription(ds);
+				JsonObject jO = new JsonObject();
+				jO.put("success", "Tags für Data Asset " + id + " wurden generiert.");
+				resultHandler.handle(Future.succeededFuture(jO));
+				
+			}else {
+				resultHandler.handle(Future.failedFuture(dataAssetReply.cause()));
+			}
+		});
+	}
+	
+	public void getById(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
+		dataAssetManager.findDatasetById(id, dataAssetReply -> {
+			if(dataAssetReply.succeeded()){
+				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
+				JsonObject jO = new JsonObject();
+				jO.put("description", ds.getDescription());
+				jO.put("tags", ds.getTags().toString());
+                resultHandler.handle(Future.succeededFuture(jO));
+				
+			}else {
+				resultHandler.handle(Future.failedFuture(dataAssetReply.cause()));
+			}
+		});
+	}
 
 	public void delete(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
 		dataAssetManager.findDatasetById(id, dataAssetReply -> {

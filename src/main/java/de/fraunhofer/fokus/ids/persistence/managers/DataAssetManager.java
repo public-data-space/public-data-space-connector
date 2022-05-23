@@ -23,9 +23,7 @@ import io.vertx.sqlclient.Tuple;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.jsoup.Jsoup;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -57,7 +55,7 @@ public class DataAssetManager {
 
 	private static final String DELETE_DAT_UPDATE = "DELETE FROM dataset WHERE id = $1";
 	private static final String DELETE_DIST_UPDATE = "DELETE FROM distribution WHERE datasetid = $1";
-
+	
 	private static final String UPDATE_TAGS = "UPDATE dataset SET tags = $1, updated_at = NOW() WHERE resourceid = $2";
 
 	public DataAssetManager(Vertx vertx) {
@@ -256,6 +254,7 @@ public class DataAssetManager {
 		updateTagsFromDescription(dataAsset);
 		resultHandler.handle(Future.succeededFuture());
 	}
+	
 
 	public void updateTagsFromDescription(Dataset dataAsset) {
 

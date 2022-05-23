@@ -270,6 +270,62 @@ paths:
           $ref: '#/components/responses/401NotAuthorized'
         500:
           $ref: '#/components/responses/500InternalError'
+  /api/dataassets/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to get a Data Asset.
+      summary: Get Data Asset
+      operationId: getDataAssetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: Status of getting the Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
+  /api/dataassets/{id}/tags:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - DataAssets
+      description: Endpoint to automatically create tags for aData Asset.
+      summary: Tags Data Asset
+      operationId: tagsDataAssetId
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the requested data asset.
+      responses:
+        200:
+          description: Status of tag creation for Dataset at the Connector.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessage'
+        401:
+          $ref: '#/components/responses/401NotAuthorized'
+        500:
+          $ref: '#/components/responses/500InternalError'
   /api/dataassets/{id}/publish:
     get:
       security:
