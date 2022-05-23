@@ -11,10 +11,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.client.WebClient;
 import io.vertx.sqlclient.Tuple;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.jsoup.Jsoup;
 
 import static de.fraunhofer.fokus.ids.persistence.util.Functions.checkNull;
 /**
@@ -24,6 +28,10 @@ public class DataAssetManager {
 
 	private Logger LOGGER = LoggerFactory.getLogger(DataAssetManager.class.getName());
 	private DatabaseConnector databaseConnector;
+	
+	private Vertx vertx;
+	WebClient webClient;
+
 
 	private static final String FINDBYDATASETID_QUERY = "SELECT * FROM Dataset WHERE id = $1";
 	private static final String FINDBYDISTRIBUTIONID_QUERY = "SELECT * FROM Distribution WHERE id = $1";
@@ -41,9 +49,14 @@ public class DataAssetManager {
 
 	private static final String DELETE_DAT_UPDATE = "DELETE FROM dataset WHERE id = $1";
 	private static final String DELETE_DIST_UPDATE = "DELETE FROM distribution WHERE datasetid = $1";
+	
+	private static final String UPDATE_TAGS = "UPDATE dataset SET tags = $1, updated_at = NOW() WHERE resourceid = $2";
 
-	public DataAssetManager() {
+	public DataAssetManager(Vertx vertx) {
 		databaseConnector = DatabaseConnector.getInstance();
+		this.vertx = vertx;
+		this.webClient = WebClient.create(vertx);
+
 	}
 
 	public void findDatasetById(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
@@ -203,6 +216,59 @@ public class DataAssetManager {
 		});
 		resultHandler.handle(Future.succeededFuture());
 	}
+	
+	public void updateTagsFromDescription(Dataset dataAsset) {
+
+		String description = checkNull(dataAsset.getDescription());
+		description = Jsoup.parse(description).text();
+
+		
+
+		MultiMap form = MultiMap.caseInsensitiveMultiMap();
+		form.add("text", description);
+		//webClient.postAbs("https://annif.apps.osc.fokus.fraunhofer.de/v1/projects/data-theme-nn-ensemble-en/suggest")
+		webClient.postAbs("https://api.annif.org/v1/projects/yso-mllm-en/suggest")
+				.ssl(true).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
+					if (ar.succeeded()) {
+
+						HttpResponse<io.vertx.core.buffer.Buffer> response = ar.result();
+						LOGGER.info(response.toString());
+						JsonObject json = response.bodyAsJsonObject();
+						JsonArray jsonArray = (JsonArray) json.getValue("results");
+						Set<String> tags = dataAsset.getTags();
+						int tagsSize = 0;
+						if (tags != null) {
+							tagsSize = tags.size();
+						}
+						String[] result = new String[jsonArray.size() + tagsSize];
+						for (int i = 0; i < jsonArray.size(); i++) {
+							result[i] = jsonArray.getJsonObject(i).getString("label");
+							LOGGER.info(result[i]);
+						}
+
+						int j = 0;
+						if (tagsSize != 0) {
+							for (String tag : tags) {
+								result[jsonArray.size() + j] = tag;
+								j++;
+							}
+						}
+						
+						Tuple params = Tuple.tuple().addStringArray(result).addString(dataAsset.getResourceId());
+
+						databaseConnector.query(UPDATE_TAGS, params, reply -> {
+							if (reply.failed()) {
+								LOGGER.error(reply.cause());
+							}
+						});
+
+					} else {
+						LOGGER.info(ar.cause());
+					}
+				});
+
+	}
+
 
 	JsonObject processAdditionalMetadata(Resource resource){
 		JsonObject jsonObj = new JsonObject();
