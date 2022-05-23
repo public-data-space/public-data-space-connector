@@ -36,7 +36,7 @@ public class DataAssetController {
     private BrokerController brokerController;
 
     public DataAssetController(Vertx vertx) {
-        dataAssetManager = new DataAssetManager();
+        dataAssetManager = new DataAssetManager(vertx);
         jobManager = new JobManager();
         this.dataSourceManager = new DataSourceManager();
         dataSourceAdapterService = DataSourceAdapterService.createProxy(vertx, Constants.DATASOURCEADAPTER_SERVICE);

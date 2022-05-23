@@ -46,7 +46,7 @@ public class IDSService {
 	private AuthAdapterService authAdapterService;
 
 	public IDSService(Vertx vertx){
-		dataAssetManager = new DataAssetManager();
+		dataAssetManager = new DataAssetManager(vertx);
 		configService = new ConfigService(vertx);
 		this.authAdapterService = AuthAdapterService.createProxy(vertx, Constants.AUTHADAPTER_SERVICE);
 

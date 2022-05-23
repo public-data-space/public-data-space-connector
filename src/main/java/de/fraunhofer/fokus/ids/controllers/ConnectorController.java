@@ -53,7 +53,7 @@ public class ConnectorController {
 	public ConnectorController(Vertx vertx){
 		this.idsService = new IDSService(vertx);
 		this.authAdapterService = AuthAdapterService.createProxy(vertx, Constants.AUTHADAPTER_SERVICE);
-		this.dataAssetManager = new DataAssetManager();
+		this.dataAssetManager = new DataAssetManager(vertx);
 		this.dataSourceManager = new DataSourceManager();
 		this.dataSourceAdapterService = DataSourceAdapterService.createProxy(vertx, Constants.DATASOURCEADAPTER_SERVICE);
 		this.configService = new ConfigService(vertx);
