@@ -20,6 +20,7 @@ import io.vertx.ext.web.multipart.MultipartForm;
 import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.sqlclient.Tuple;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,10 +50,10 @@ public class DataAssetManager {
 	private static final String COUNTPUBLISHED_QUERY = "SELECT COUNT(d) FROM Dataset d WHERE d.status = $1";
 	private static final String CHANGESTATUS_UPDATE = "UPDATE Dataset SET status = $1, updated_at = NOW() WHERE id = $2";
 	private static final String FINDDISTRIBUTIONBYDATASETID_QUERY = "SELECT * FROM Distribution WHERE datasetId = $1";
-	private static final String INSERT_DATASET = "INSERT INTO Dataset (created_at, updated_at, resourceid, license, title, description, publisher, status, tags, version, sourceid, additionalmetadata) "
-			+ "VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
-	private static final String INSERT_DISTRIBUTION = "INSERT INTO Distribution (created_at, updated_at, resourceid, license, title, description, publisher, filename, filetype, datasetid, additionalmetadata) "
-			+ "VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)";
+	private static final String INSERT_DATASET = "INSERT INTO Dataset (created_at, updated_at, resourceid, license, title, description, publisher, status, tags, version, sourceid, pid, author, data_access_level, additionalmetadata) " +
+			"VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)";
+	private static final String INSERT_DISTRIBUTION = "INSERT INTO Distribution (created_at, updated_at, resourceid, license, title, description, publisher, filename, filetype, byte_size, datasetid, additionalmetadata) " +
+			"VALUES (NOW(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
 
 	private static final String DELETE_DAT_UPDATE = "DELETE FROM dataset WHERE id = $1";
 	private static final String DELETE_DIST_UPDATE = "DELETE FROM distribution WHERE datasetid = $1";
@@ -104,7 +105,7 @@ public class DataAssetManager {
 				while (iterator.hasNext()) {
 					Promise<Dataset> promise = Promise.promise();
 					datasetFutureList.add(promise.future());
-					Dataset da = Json.decodeValue(iterator.next().toString(), Dataset.class);
+					Dataset da = Json.decodeValue(this.buildDataAssetAdditionalData((JsonObject)iterator.next()), Dataset.class);
 					buildDataset(da, promise);
 				}
 				CompositeFuture.all(datasetFutureList).onComplete(ac -> {
@@ -129,18 +130,40 @@ public class DataAssetManager {
 	}
 
 	private void buildDataset(Dataset da, Handler<AsyncResult<Dataset>> next) {
-		databaseConnector.query(FINDDISTRIBUTIONBYDATASETID_QUERY, Tuple.tuple().addString(da.getResourceId()),
-				reply2 -> {
-					if (reply2.succeeded()) {
-						Set<Distribution> dists = reply2.result().stream()
-								.map(jO -> Json.decodeValue(jO.toString(), Distribution.class))
-								.collect(Collectors.toSet());
-						da.setDistributions(dists);
-						next.handle(Future.succeededFuture(da));
-					} else {
-						next.handle(Future.failedFuture(reply2.cause()));
-					}
-				});
+		databaseConnector.query(FINDDISTRIBUTIONBYDATASETID_QUERY, Tuple.tuple().addString(da.getResourceId()), reply2 -> {
+			if(reply2.succeeded()){
+				Set<Distribution> dists = reply2.result().stream().map(jO ->
+						Json.decodeValue(this.buildDistributionAdditionalData(jO), Distribution.class)).collect(Collectors.toSet());
+				da.setDistributions(dists);
+				next.handle(Future.succeededFuture(da));
+			} else {
+				next.handle(Future.failedFuture(reply2.cause()));
+			}
+		});
+	}
+
+	private String buildDataAssetAdditionalData(JsonObject dataAsset){
+		String[] keys = {"pid", "author", "data_access_level"};
+		for(String s : keys){
+			if(dataAsset.containsKey(s)) {
+				JsonArray value = new JsonArray();
+				value.add(dataAsset.getString(s));
+				dataAsset.getJsonObject("additionalmetadata").put(s, value);
+				dataAsset.remove(s);
+			}
+		}
+		return dataAsset.toString();
+	}
+
+	private String buildDistributionAdditionalData(JsonObject distribution){
+		String additionalDataKey = "byte_size";
+		if(distribution.containsKey(additionalDataKey)) {
+			JsonArray value = new JsonArray();
+			value.add(distribution.getInteger(additionalDataKey).toString());
+			distribution.getJsonObject("additionalmetadata").put(additionalDataKey, value);
+			distribution.remove(additionalDataKey);
+		}
+		return distribution.toString();
 	}
 
 	public void findAll(Handler<AsyncResult<JsonArray>> resultHandler) {
@@ -183,17 +206,22 @@ public class DataAssetManager {
 
 	public void add(JsonObject dataAssetJson, Handler<AsyncResult<Void>> resultHandler) {
 
-		Dataset dataAsset = Json.decodeValue(dataAssetJson.toString(), Dataset.class);
+		Dataset dataAsset = Json.decodeValue(dataAssetJson.toString(),Dataset.class);
+		JsonObject dataAssetAdditionalData = processAdditionalMetadata(dataAsset);
 
-
-		Tuple datasetParams = Tuple.tuple().addString(checkNull(dataAsset.getResourceId()))
-				.addString(checkNull(dataAsset.getLicense())).addString(checkNull(dataAsset.getTitle()))
-				.addString(checkNull(dataAsset.getDescription())).addString(checkNull(dataAsset.getPublisher()))
-				.addInteger(dataAsset.getStatus() == null ? DataAssetStatus.UNAPPROVED.ordinal()
-						: dataAsset.getStatus().ordinal())
-				.addStringArray(dataAsset.getTags() == null || dataAsset.getTags().isEmpty() ? new String[0]
-						: dataAsset.getTags().toArray(new String[0]))
-				.addString(checkNull(dataAsset.getVersion())).addLong(dataAsset.getSourceId());
+		Tuple datasetParams = Tuple.tuple()
+				.addString(checkNull(dataAsset.getResourceId()))
+				.addString(checkNull(dataAsset.getLicense()))
+				.addString(checkNull(dataAsset.getTitle()))
+				.addString(checkNull(dataAsset.getDescription()))
+				.addString(checkNull(dataAsset.getPublisher()))
+				.addInteger(dataAsset.getStatus() == null ? DataAssetStatus.UNAPPROVED.ordinal() : dataAsset.getStatus().ordinal())
+				.addStringArray(dataAsset.getTags() == null ||dataAsset.getTags().isEmpty() ? new String[0] : dataAsset.getTags().toArray(new String[0]))
+				.addString(checkNull(dataAsset.getVersion()))
+				.addLong(dataAsset.getSourceId())
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("pid").getString(0)))
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("author").getString(0)))
+				.addString(checkNull(dataAssetAdditionalData.getJsonArray("data_access_level").getString(0)));
 
 		datasetParams.addValue(processAdditionalMetadata(dataAsset));
 
@@ -201,7 +229,8 @@ public class DataAssetManager {
 			if (datasetReply.failed()) {
 				LOGGER.error(datasetReply.cause());
 			} else {
-				for (Distribution distribution : dataAsset.getDistributions()) {
+				for(Distribution distribution : dataAsset.getDistributions()){
+					JsonObject distributionAdditionalData = processAdditionalMetadata(distribution);
 
 					Tuple distributionParams = Tuple.tuple().addString(checkNull(distribution.getResourceId()))
 							.addString(checkNull(distribution.getLicense()))
@@ -210,6 +239,7 @@ public class DataAssetManager {
 							.addString(checkNull(distribution.getPublisher()))
 							.addString(checkNull(distribution.getFilename()))
 							.addString(checkNull(distribution.getFiletype()))
+							.addInteger(Integer.parseInt(checkNull(distributionAdditionalData.getJsonArray("byte_size").getString(0))))
 							.addString(checkNull(dataAsset.getResourceId()));
 
 					distributionParams.addValue(processAdditionalMetadata(distribution));
@@ -291,6 +321,8 @@ public class DataAssetManager {
 				}
 				jsonObj.put(pair.getKey(), array);
 				disIt.remove();
+				if(pair.getKey().equals("pid") || pair.getKey().equals("author") || pair.getKey().equals("data_access_level") || pair.getKey().equals("byte_size"))
+					resource.getAdditionalmetadata().remove(pair.getKey(), pair.getValue());
 			}
 		}
 		return jsonObj;

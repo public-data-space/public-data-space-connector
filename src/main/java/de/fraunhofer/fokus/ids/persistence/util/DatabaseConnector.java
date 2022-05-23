@@ -26,6 +26,11 @@ public class DatabaseConnector {
     private RowTransformer rowTransformer;
     private static final DatabaseConnector DBC = new DatabaseConnector();
 
+    private final String CREATE_PRIMARY_KEY = "PRIMARY KEY(1)";
+    private final String ADD_PRIMARY_KEY = "ADD PRIMARY KEY(1)";
+    private final String ADD_FOREIGN_KEY = "ALTER TABLE 1 DROP CONSTRAINT IF EXISTS 2,ADD CONSTRAINT 2 FOREIGN KEY(3) REFERENCES 4(5)";
+    private final String FOREIGN_KEY_RULES = "ON DELETE SET NULL ON UPDATE CASCADE";
+
     private DatabaseConnector() {
         this.rowTransformer = new RowTransformer();
     }
@@ -77,7 +82,10 @@ public class DatabaseConnector {
                                  String tableName,
                                  Handler<AsyncResult<List<JsonObject>>> resultHandler) {
         List<String> keys = new ArrayList<>();
-        columInfo.forEach(e -> keys.add(e.getKey()));
+        columInfo.forEach(e -> {
+            if(!e.getKey().equals("primary_key") && !e.getKey().equals("foreign_key") && !e.getKey().equals("ref_key") && !e.getKey().equals("ref_table"))
+                keys.add(e.getKey());
+        });
             client.getConnection( ar -> {
                 if(ar.succeeded()){
                     SqlConnection conn = ar.result();
@@ -110,14 +118,19 @@ public class DatabaseConnector {
                             }
 
                         } else {
-                            String query = "CREATE TABLE IF NOT EXISTS "+tableName+ " (";
+                            String query = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
                             String columns  ="";
 
                             for (String key:keys){
-                                columns = columns+key+" "+columInfo.getString(key)+",";
+                                columns = columns + key + " " + columInfo.getString(key) + ",";
                             }
-                            columns = columns.substring(0,columns.length()-1);
-                            query = query+columns+")";
+                            columns = columns.substring(0, columns.length()-1);
+                            query = query +
+                                    columns +
+                                    (columInfo.containsKey("primary_key")
+                                            ?"," + CREATE_PRIMARY_KEY.replace("1", columInfo.getString("primary_key")) + ")"
+                                            :")");
+
                             conn.query(query).execute(resultAsyncResult -> {
                                 if (resultAsyncResult.succeeded()) {
                                     resultHandler.handle(Future.succeededFuture(new ArrayList<>()));
@@ -141,18 +154,59 @@ public class DatabaseConnector {
     private void addColumns(SqlConnection connection,String tableName,List<String> columns,JsonObject query,Handler<AsyncResult<List<JsonObject>>> resultHandler){
         String updateQuery = "ALTER TABLE " + tableName + " ";
         for (String key : columns) {
-            updateQuery += "ADD COLUMN  IF NOT EXISTS " + key + " " + query.getString(key) + ",";
+            updateQuery += "ADD COLUMN IF NOT EXISTS " + key + " " + query.getString(key) + ",";
         }
-        connection.query(updateQuery.substring(0, updateQuery.length() - 1)).execute(add -> {
+        updateQuery = updateQuery.substring(0, updateQuery.length()-1);
+        updateQuery += (query.containsKey("primary_key")
+                ?"," + ADD_PRIMARY_KEY.replace("1", query.getString("primary_key"))
+                :"");
+
+        connection.query(updateQuery).execute(add -> {
             if (add.succeeded()) {
                 LOGGER.info("Columns added");
                 resultHandler.handle(Future.succeededFuture(new ArrayList<>()));
                 connection.close();
             } else {
-                LOGGER.info("Add failed");
+                LOGGER.info("Add failed: " + add.cause());
                 resultHandler.handle(Future.failedFuture(add.cause()));
                 connection.close();
             }
         });
+    }
+
+    public void createAddForeignKeys(String table, JsonObject tableInfo, Handler<AsyncResult<List<JsonObject>>> resultHandler){
+        client.getConnection(conn ->{
+            if(conn.succeeded()){
+                String query = getForeignKeyStatement(table, tableInfo);
+                conn.result().query(query).execute(re ->{
+                    if(re.succeeded()){
+                        LOGGER.info("Foreign key added");
+                        resultHandler.handle(Future.succeededFuture(new ArrayList<>()));
+                        conn.result().close();
+                    } else {
+                        LOGGER.info("Foreign key adding failed: " + re.cause());
+                        resultHandler.handle(Future.failedFuture(re.cause()));
+                        conn.result().close();
+                    }
+                });
+            } else {
+                LOGGER.error(conn);
+                resultHandler.handle(Future.failedFuture(conn.cause()));
+            }
+        });
+    }
+
+    private String getForeignKeyStatement(String tableName, JsonObject tableInfo){
+        String foreignKeyStatement = ADD_FOREIGN_KEY;
+
+        foreignKeyStatement = foreignKeyStatement.replace("1", tableName);
+        foreignKeyStatement = foreignKeyStatement.replaceAll("2", tableName + "_" +
+                tableInfo.getString("foreign_key") + "_" + tableInfo.getString("ref_table"));
+        foreignKeyStatement = foreignKeyStatement.replace("3", tableInfo.getString("foreign_key"));
+        foreignKeyStatement = foreignKeyStatement.replace("4", tableInfo.getString("ref_table"));
+        foreignKeyStatement = foreignKeyStatement.replace("5", tableInfo.getString("ref_key"));
+        foreignKeyStatement += " " + FOREIGN_KEY_RULES;
+
+        return foreignKeyStatement;
     }
 }
