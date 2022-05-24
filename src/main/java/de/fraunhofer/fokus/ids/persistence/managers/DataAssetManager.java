@@ -31,6 +31,36 @@ import static de.fraunhofer.fokus.ids.persistence.util.Functions.checkNull;
 
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
+ *
+ * @newest_changeses_and_notes_of_Zead:
+ *      @properties:
+ * 			@INSERT_DATASET: columns oid, author, data_access_level and their values as parameters are added.
+ * 			@INSERT_DISTRIBUTION: column byte_size and its value as parameter are added.
+ *      @methods: (#some_key is a key of the adjustment that you can search for.)
+ * 			@add (edited)
+ *      		#StoreDataInDatabaseDataAsset:
+ *      			Data that I have received from adapter are saved in object dataset. I extract the additional data from
+ *      			this object into JsonObject using the method #processAdditionalMetadata. then we put this data in
+ *      			database query as parameters.
+ *      		#StoreDataInDatabaseDistirbution:
+ *      			I do exactly the same as #StoreDataInDatabaseDataAsset
+ *      	@processAdditionalMetadata: (new method)
+ *      		Remove the data from Dataset.additionalData and save it in a jsonObject. to be saved in the database.
+ *      		If we do not remove these data	from Dataset.additionalData, then they will be saved in additionaldata
+ *      		column in database. see #saveAdditionalData
+ *      	@findDatasetList: (edited)
+ *      		#formatDataAssetDataAsDatasetObject:
+ *      			DataAsset Info that called from database should be formatted in Dataset object before I send it to
+ *      			client. This task does the method #buildDataAssetAdditionalData.
+ *          @buildDataset: (edited)
+ *       		#formatDistributionDataAsDistributionObject:
+ *      			Distribution Info that called from database should be formatted in Distribution object before I send
+ *      			it to client. This task does the method #buildDistributionAdditionalData.
+ *      	@buildDataAssetAdditionalData:
+ *      		this method remove data asset data from the first level in the given jsonObject	and save it in the same
+ *      		object but in additionalData array as <String, String[]>.
+ *      	@buildDistributionAdditionalData:
+ *      		Does the same thing as buildDataAssetAdditionalData, so I will combine these two methods in one.
  */
 public class DataAssetManager {
 
@@ -103,6 +133,7 @@ public class DataAssetManager {
 				while (iterator.hasNext()) {
 					Promise<Dataset> promise = Promise.promise();
 					datasetFutureList.add(promise.future());
+					//#formatDataAssetDataAsDatasetObject
 					Dataset da = Json.decodeValue(this.buildDataAssetAdditionalData((JsonObject)iterator.next()), Dataset.class);
 					buildDataset(da, promise);
 				}
@@ -130,6 +161,7 @@ public class DataAssetManager {
 	private void buildDataset(Dataset da, Handler<AsyncResult<Dataset>> next) {
 		databaseConnector.query(FINDDISTRIBUTIONBYDATASETID_QUERY, Tuple.tuple().addString(da.getResourceId()), reply2 -> {
 			if(reply2.succeeded()){
+				//#formatDistributionDataAsDistributionObject
 				Set<Distribution> dists = reply2.result().stream().map(jO ->
 						Json.decodeValue(this.buildDistributionAdditionalData(jO), Distribution.class)).collect(Collectors.toSet());
 				da.setDistributions(dists);
@@ -205,6 +237,7 @@ public class DataAssetManager {
 	public void add(JsonObject dataAssetJson, Handler<AsyncResult<Void>> resultHandler) {
 
 		Dataset dataAsset = Json.decodeValue(dataAssetJson.toString(),Dataset.class);
+		//#StoreDataInDatabaseDataAsset
 		JsonObject dataAssetAdditionalData = processAdditionalMetadata(dataAsset);
 
 		Tuple datasetParams = Tuple.tuple()
@@ -221,6 +254,7 @@ public class DataAssetManager {
 				.addString(checkNull(dataAssetAdditionalData.getJsonArray("author").getString(0)))
 				.addString(checkNull(dataAssetAdditionalData.getJsonArray("data_access_level").getString(0)));
 
+		//#saveAdditionalData
 		datasetParams.addValue(processAdditionalMetadata(dataAsset));
 
 		databaseConnector.query(INSERT_DATASET, datasetParams, datasetReply -> {
@@ -228,6 +262,7 @@ public class DataAssetManager {
 				LOGGER.error(datasetReply.cause());
 			} else {
 				for(Distribution distribution : dataAsset.getDistributions()){
+					//#StoreDataInDatabaseDistirbution
 					JsonObject distributionAdditionalData = processAdditionalMetadata(distribution);
 
 					Tuple distributionParams = Tuple.tuple().addString(checkNull(distribution.getResourceId()))
@@ -240,6 +275,7 @@ public class DataAssetManager {
 							.addInteger(Integer.parseInt(checkNull(distributionAdditionalData.getJsonArray("byte_size").getString(0))))
 							.addString(checkNull(dataAsset.getResourceId()));
 
+					//#saveAdditionalData
 					distributionParams.addValue(processAdditionalMetadata(distribution));
 
 					databaseConnector.query(INSERT_DISTRIBUTION, distributionParams, distributionReply -> {

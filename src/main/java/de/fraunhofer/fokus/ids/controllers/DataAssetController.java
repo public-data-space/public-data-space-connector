@@ -285,7 +285,7 @@ public class DataAssetController {
 				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
 				dataAssetManager.updateTagsFromDescription(ds);
 				JsonObject jO = new JsonObject();
-				jO.put("success", "Tags für Data Asset " + id + " wurden generiert.");
+				jO.put("success", "Tags fÃ¼r Data Asset " + id + " wurden generiert.");
 				resultHandler.handle(Future.succeededFuture(jO));
 				
 			}else {

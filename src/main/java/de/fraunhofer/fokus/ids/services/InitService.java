@@ -19,6 +19,28 @@ import java.util.List;
 
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
+ *
+ * 	@newest_changeses_and_notes_of_Zead:
+ * 		@Properties:
+ *			@user: @error -> Some problem occurs with adding a primary key.
+ * 			@dataset: new columns (pid, author and data_access_level), primary_key, foreign_key, ref_key, ref_table added.
+ * 		 	@distribution: new column byte_size, primary_key added. (Problem with foreign key)
+ * 			@job: primary_key, foreign_key, ref_key, ref_table added.
+ * 			@containers: primary_key, foreign_key, ref_key, ref_table added.
+ * 		  	@datasource: primary_key added.
+ * 		   	@broker: primary_key added.
+ * 		    @configuration: primary_key added.
+ * 			@adapters: primary_key added.
+ * 			@images: primary_key added.
+ * 		@methods: (#some_key is a key of the adjustment that you can search for.)
+ * 			@setForeignKeys: (new method)
+ * 				After creating all tables the method createAddForeignKeys in DatabaseConnector is called to add all
+ * 				needed foreign keys.
+ * 			@initTables: (edited)
+ * 				#Set_all_Foreign_keys:
+ * 					I just call there the method setForeignKeys for those tables, that should have a foreign key.
+ *
+ *
  */
 public class InitService{
 
@@ -165,7 +187,7 @@ public class InitService{
             performUpdate(containers,"containers");
             performUpdate(images,"images");
 
-			//Set all Foreign keys#
+			//#Set_all_Foreign_keys
 			//setForeignKeys("distribution", distribution);
 			setForeignKeys("dataset", dataset);
 			setForeignKeys("job", job);

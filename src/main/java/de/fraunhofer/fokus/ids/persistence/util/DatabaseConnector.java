@@ -18,6 +18,35 @@ import java.util.ArrayList;
 import java.util.List;
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
+ *
+ * @newest_changeses_and_notes_of_Zead:
+ *      @properties:
+ *          @CREATE_PRIMARY_KEY, @ADD_PRIMARY_KEY, @ADD_FOREIGN_KEY and @FOREIGN_KEY_RULES added.
+ *      @methods: (#some_key is a key of the adjustment that you can search for.)
+ *          @initTable: (edited)
+ *              #Create_Primary_key:
+ *                  I create here a primary key if this information is provided in the corresponding table.
+ *                  number 1 in the query is replaced with the column name that should be the primary key.
+ *
+ *              #Extract_none_columns_keys:
+ *                  In InitService class we create there objects of tables information. these objects contain info
+ *                  about columns names, primary and foreign keys. the method initTable assumes that this objects
+ *                  contain just columns names and add this names to a variable named key. So I have not allowed
+ *                  primary and foreign keys information to be added in the variable key.
+ *
+ *          @addColumns: (edited)
+ *              #Add_primary_key:
+ *                  I do here the same thing as #Create_Primary_key but the key in query is added and not created.
+ *
+ *          @createAddForeignKeys: (new method)
+ *              #createAddForeignKeys:
+ *                  I add/create there foreign keys.
+ *                  I assume there that the given table should have a foreign key and its object in initService contains
+ *                  that Information.
+ *
+ *         @getForeignKeyStatement: (new method)
+ *              #getForeignKeyStatement:
+ *                  this method builds the query to add a foreign key
  */
 public class DatabaseConnector {
 
@@ -82,6 +111,7 @@ public class DatabaseConnector {
                                  String tableName,
                                  Handler<AsyncResult<List<JsonObject>>> resultHandler) {
         List<String> keys = new ArrayList<>();
+        //#Extract_none_columns_keys
         columInfo.forEach(e -> {
             if(!e.getKey().equals("primary_key") && !e.getKey().equals("foreign_key") && !e.getKey().equals("ref_key") && !e.getKey().equals("ref_table"))
                 keys.add(e.getKey());
@@ -125,6 +155,7 @@ public class DatabaseConnector {
                                 columns = columns + key + " " + columInfo.getString(key) + ",";
                             }
                             columns = columns.substring(0, columns.length()-1);
+                            //#Create_Primary_key
                             query = query +
                                     columns +
                                     (columInfo.containsKey("primary_key")
@@ -157,6 +188,7 @@ public class DatabaseConnector {
             updateQuery += "ADD COLUMN IF NOT EXISTS " + key + " " + query.getString(key) + ",";
         }
         updateQuery = updateQuery.substring(0, updateQuery.length()-1);
+        //#Add_primary_key
         updateQuery += (query.containsKey("primary_key")
                 ?"," + ADD_PRIMARY_KEY.replace("1", query.getString("primary_key"))
                 :"");
