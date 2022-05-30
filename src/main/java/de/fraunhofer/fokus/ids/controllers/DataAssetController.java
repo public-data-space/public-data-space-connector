@@ -283,11 +283,7 @@ public class DataAssetController {
 		dataAssetManager.findDatasetById(id, dataAssetReply -> {
 			if(dataAssetReply.succeeded()){
 				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
-				dataAssetManager.updateTagsFromDescription(ds);
-				JsonObject jO = new JsonObject();
-				jO.put("success", "Tags für Data Asset " + id + " wurden generiert.");
-				resultHandler.handle(Future.succeededFuture(jO));
-				
+				dataAssetManager.updateTagsFromDescription(ds, resultHandler);			
 			}else {
 				resultHandler.handle(Future.failedFuture(dataAssetReply.cause()));
 			}

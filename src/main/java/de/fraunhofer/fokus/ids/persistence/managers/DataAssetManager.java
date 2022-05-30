@@ -1,5 +1,6 @@
 package de.fraunhofer.fokus.ids.persistence.managers;
 
+import de.fraunhofer.fokus.ids.main.ApplicationConfig;
 import de.fraunhofer.fokus.ids.models.Constants;
 import de.fraunhofer.fokus.ids.persistence.entities.Dataset;
 import de.fraunhofer.fokus.ids.persistence.entities.Distribution;
@@ -8,6 +9,7 @@ import de.fraunhofer.fokus.ids.persistence.enums.DataAssetStatus;
 import de.fraunhofer.fokus.ids.persistence.util.DatabaseConnector;
 import de.fraunhofer.fokus.ids.services.datasourceAdapter.DataSourceAdapterService;
 import io.netty.channel.unix.Buffer;
+import io.vertx.config.ConfigRetriever;
 import io.vertx.core.*;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -286,62 +288,78 @@ public class DataAssetManager {
 				}
 			}
 		});
-		
-		updateTagsFromDescription(dataAsset);
 		resultHandler.handle(Future.succeededFuture());
 	}
 	
 
-	public void updateTagsFromDescription(Dataset dataAsset) {
+	public void updateTagsFromDescription(Dataset dataAsset, Handler<AsyncResult<JsonObject>> resultHandler) {
 
 		String description = checkNull(dataAsset.getDescription());
 		description = Jsoup.parse(description).text();
-
-		
-
 		MultiMap form = MultiMap.caseInsensitiveMultiMap();
 		form.add("text", description);
-		//webClient.postAbs("https://annif.apps.osc.fokus.fraunhofer.de/v1/projects/data-theme-nn-ensemble-en/suggest")
-		webClient.postAbs("https://api.annif.org/v1/projects/yso-mllm-en/suggest")
-				.ssl(true).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
-					if (ar.succeeded()) {
-
-						HttpResponse<io.vertx.core.buffer.Buffer> response = ar.result();
-						LOGGER.info(response.toString());
-						JsonObject json = response.bodyAsJsonObject();
-						JsonArray jsonArray = (JsonArray) json.getValue("results");
-						Set<String> tags = dataAsset.getTags();
-						int tagsSize = 0;
-						if (tags != null) {
-							tagsSize = tags.size();
-						}
-						String[] result = new String[jsonArray.size() + tagsSize];
-						for (int i = 0; i < jsonArray.size(); i++) {
-							result[i] = jsonArray.getJsonObject(i).getString("label");
-							LOGGER.info(result[i]);
-						}
-
-						int j = 0;
-						if (tagsSize != 0) {
-							for (String tag : tags) {
-								result[jsonArray.size() + j] = tag;
-								j++;
+		
+		ConfigRetriever retriever = ConfigRetriever.create(vertx);
+	       retriever.getConfig(ar2 -> {
+	           if (ar2.succeeded()) {
+	               JsonObject env = ar2.result();
+	               String annif = env.getString(ApplicationConfig.ENV_ANNIF, ApplicationConfig.DEFAULT_ANNIF);
+	               //webClient.postAbs("https://annif.apps.osc.fokus.fraunhofer.de/v1/projects/data-theme-nn-ensemble-en/suggest")
+	               webClient.postAbs(annif)
+	               		.ssl(true).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
+							if (ar.succeeded()) {
+		
+								HttpResponse<io.vertx.core.buffer.Buffer> response = ar.result();
+								LOGGER.info(response.toString());
+								JsonObject json = response.bodyAsJsonObject();
+								JsonArray jsonArray = (JsonArray) json.getValue("results");
+								Set<String> tags = dataAsset.getTags();
+								int tagsSize = 0;
+								if (tags != null) {
+									tagsSize = tags.size();
+								}
+								String[] result = new String[jsonArray.size() + tagsSize];
+								for (int i = 0; i < jsonArray.size(); i++) {
+									result[i] = jsonArray.getJsonObject(i).getString("label");
+								}
+		
+								int j = 0;
+								if (tagsSize != 0) {
+									for (String tag : tags) {
+										result[jsonArray.size() + j] = tag;
+										j++;
+									}
+								}
+		
+								Tuple params = Tuple.tuple().addStringArray(result).addString(dataAsset.getResourceId());
+		
+								databaseConnector.query(UPDATE_TAGS, params, reply -> {
+									if (reply.failed()) {
+										LOGGER.error(reply.cause());
+									} else {
+										JsonObject jO = new JsonObject();
+										String [] newTags = params.getStringArray(0);
+										String tagsResult = "";
+										for (int i = 0; i<newTags.length; i++) {
+											tagsResult += newTags[i] + ", ";
+										}
+										if(tagsResult.length() > 3) {
+											tagsResult = tagsResult.substring(0, tagsResult.length()-2);
+										}
+										
+										jO.put("tags", tagsResult);
+										resultHandler.handle(Future.succeededFuture(jO));	
+									}
+								});
+		
+							} else {
+								LOGGER.info(ar.cause());
 							}
-						}
-
-						Tuple params = Tuple.tuple().addStringArray(result).addString(dataAsset.getResourceId());
-
-						databaseConnector.query(UPDATE_TAGS, params, reply -> {
-							if (reply.failed()) {
-								LOGGER.error(reply.cause());
-							}
-						});
-
-					} else {
-						LOGGER.info(ar.cause());
-					}
-				});
-
+						});   
+	           } else {
+	               LOGGER.error("Config could not be retrieved.");
+	           }
+	       });
 	}
 
 	JsonObject processAdditionalMetadata(Resource resource) {

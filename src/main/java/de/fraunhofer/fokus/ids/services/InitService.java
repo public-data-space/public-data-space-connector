@@ -57,13 +57,26 @@ public class InitService{
 			.put("password","TEXT");
 			//.put("primary_key", "id");
 
-	private final JsonObject dataset = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
-			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
-			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("status","INTEGER")
-			.put("tags","TEXT[]").put("version","TEXT").put("sourceid","BIGINT")
-			.put("pid","TEXT").put("author","TEXT").put("data_access_level","TEXT")
+	private final JsonObject dataset = new JsonObject()
+			.put("id","SERIAL")
+			.put("created_at","TIMESTAMP")
+			.put("updated_at","TIMESTAMP")
+			.put("resourceid","TEXT")
+			.put("license","TEXT")
+			.put("title","TEXT")
+			.put("description","TEXT")
+			.put("publisher","TEXT")
+			.put("status","INTEGER")
+			.put("tags","TEXT[]")
+			.put("version","TEXT")
+			.put("sourceid","BIGINT")
+			.put("pid","TEXT")
+			.put("author","TEXT")
+			.put("data_access_level","TEXT")
 			.put("additionalmetadata","JSONB")
-			.put("primary_key", "id").put("foreign_key", "sourceid").put("ref_key", "id")
+			.put("primary_key", "id")
+			.put("foreign_key", "sourceid")
+			.put("ref_key", "id")
 			.put("ref_table", "datasource");
 
 	private final JsonObject distribution = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")

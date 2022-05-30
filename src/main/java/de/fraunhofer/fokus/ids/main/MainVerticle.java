@@ -209,7 +209,7 @@ public class MainVerticle extends AbstractVerticle {
                         
                         .addHandlerByOperationId("getDataAssetId", routingContext ->
                         dataAssetController.getById(Long.parseLong(routingContext.request().getParam("id")),result -> reply(result, routingContext.response())))
-                        //TODO create Endpoint
+            
                         .addHandlerByOperationId("tagsDataAssetId", routingContext ->
                         dataAssetController.generateTags(Long.parseLong(routingContext.request().getParam("id")), result -> reply(result, routingContext.response())))
                         
