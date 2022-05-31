@@ -28,6 +28,9 @@ public class ApplicationConfig {
     public static final String ENV_SERVICE_PORT = "SERVICE_PORT";
     public static final Integer DEFAULT_SERVICE_PORT = 8080;
     
+    public static final String ENV_ANNIF = "ANNIF";
+    public static final String DEFAULT_ANNIF = "https://api.annif.org/v1/projects/yso-mllm-en/suggest";
+    
     
    
     

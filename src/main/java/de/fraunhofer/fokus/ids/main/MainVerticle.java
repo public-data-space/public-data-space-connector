@@ -206,6 +206,13 @@ public class MainVerticle extends AbstractVerticle {
                                 jobController.deleteAll(result -> reply(result, routingContext.response())))
 
                         // Data Assets
+                        
+                        .addHandlerByOperationId("getDataAssetId", routingContext ->
+                        dataAssetController.getById(Long.parseLong(routingContext.request().getParam("id")),result -> reply(result, routingContext.response())))
+            
+                        .addHandlerByOperationId("tagsDataAssetId", routingContext ->
+                        dataAssetController.generateTags(Long.parseLong(routingContext.request().getParam("id")), result -> reply(result, routingContext.response())))
+                        
 
                         .addHandlerByOperationId("getCountsId", routingContext ->
                                 dataAssetController.counts(result -> reply(result, routingContext.response())))
@@ -221,8 +228,7 @@ public class MainVerticle extends AbstractVerticle {
                                 dataAssetController.delete(Long.parseLong(routingContext.request().getParam("id")), result -> reply(result, routingContext.response())))
                         .addHandlerByOperationId("getDataAssetsId", routingContext ->
                                 dataAssetController.index(result -> reply(result, routingContext.response())))
-                        .addHandlerByOperationId("addDataAssetId", routingContext ->
-                                processDataAssetInformation(routingContext))
+                        .addHandlerByOperationId("addDataAssetId", this::processDataAssetInformation)
 
                         
                         // Data Sources

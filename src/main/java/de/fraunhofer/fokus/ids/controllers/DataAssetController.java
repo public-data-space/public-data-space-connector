@@ -36,7 +36,7 @@ public class DataAssetController {
     private BrokerController brokerController;
 
     public DataAssetController(Vertx vertx) {
-        dataAssetManager = new DataAssetManager();
+        dataAssetManager = new DataAssetManager(vertx);
         jobManager = new JobManager();
         this.dataSourceManager = new DataSourceManager();
         dataSourceAdapterService = DataSourceAdapterService.createProxy(vertx, Constants.DATASOURCEADAPTER_SERVICE);
@@ -275,6 +275,32 @@ public class DataAssetController {
 				resultHandler.handle(Future.failedFuture(reply.cause()));
 
 
+			}
+		});
+	}
+	
+	public void generateTags(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
+		dataAssetManager.findDatasetById(id, dataAssetReply -> {
+			if(dataAssetReply.succeeded()){
+				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
+				dataAssetManager.updateTagsFromDescription(ds, resultHandler);			
+			}else {
+				resultHandler.handle(Future.failedFuture(dataAssetReply.cause()));
+			}
+		});
+	}
+	
+	public void getById(Long id, Handler<AsyncResult<JsonObject>> resultHandler) {
+		dataAssetManager.findDatasetById(id, dataAssetReply -> {
+			if(dataAssetReply.succeeded()){
+				Dataset ds = Json.decodeValue(dataAssetReply.result().toString(), Dataset.class);
+				JsonObject jO = new JsonObject();
+				jO.put("description", ds.getDescription());
+				jO.put("tags", ds.getTags().toString());
+                resultHandler.handle(Future.succeededFuture(jO));
+				
+			}else {
+				resultHandler.handle(Future.failedFuture(dataAssetReply.cause()));
 			}
 		});
 	}
