@@ -22,6 +22,14 @@ import de.fraunhofer.fokus.ids.persistence.util.DatabaseConnector;
 
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
+ *  @newest_changeses_and_notes_of_Zead:
+ *         @properties:
+ *         @methods: (#some_key is a key of the adjustment that you can search for.)
+ *         	@getFile (edited)
+ *         		#getFileURLAndreturnItAsStringFromJson
+ *         			Firstly I think there is no need for Download method.
+ *         			I require the file path from the adapter, but I use post to pass the json Object.
+ *         			After getting the replay I extract the path value as String and return it.
  */
 public class DataSourceAdapterServiceImpl implements DataSourceAdapterService {
 
@@ -123,15 +131,17 @@ public class DataSourceAdapterServiceImpl implements DataSourceAdapterService {
 
 	@Override
 	public DataSourceAdapterService getFile(String dataSourceType, JsonObject request,
-			Handler<AsyncResult<String>> resultHandler) {
+											Handler<AsyncResult<String>> resultHandler) {
 		getAdapters(dataSourceType, reply -> {
 			if (reply.succeeded()) {
 				LOGGER.debug("Port: " + reply.result().getInteger("port"));
 				LOGGER.debug("Host: " + reply.result().getString("host"));
-				download(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/", request,
+				//#getFileURLAndreturnItAsStringFromJson
+				//download(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/", request,
+				webClient.post(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/").sendJsonObject(request,
 						adapterReply -> {
 							if (adapterReply.succeeded()) {
-								resultHandler.handle(Future.succeededFuture(adapterReply.result()));
+								resultHandler.handle(Future.succeededFuture(adapterReply.result().bodyAsJsonObject().getString("link")));
 							} else {
 								LOGGER.error(adapterReply.cause());
 								resultHandler.handle(Future.failedFuture(adapterReply.cause()));
