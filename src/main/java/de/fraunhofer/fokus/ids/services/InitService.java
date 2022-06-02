@@ -79,11 +79,20 @@ public class InitService{
 			.put("ref_key", "id")
 			.put("ref_table", "datasource");
 
-	private final JsonObject distribution = new JsonObject().put("id","SERIAL").put("created_at","TIMESTAMP")
-			.put("updated_at","TIMESTAMP").put("resourceid","TEXT").put("license","TEXT")
-			.put("title","TEXT").put("description","TEXT").put("publisher","TEXT").put("filename","TEXT").put("filetype","TEXT")
+	private final JsonObject distribution = new JsonObject()
+			.put("id","SERIAL")
+			.put("created_at","TIMESTAMP")
+			.put("updated_at","TIMESTAMP")
+			.put("resourceid","TEXT")
+			.put("license","TEXT")
+			.put("title","TEXT")
+			.put("description","TEXT")
+			.put("publisher","TEXT")
+			.put("filename","TEXT")
+			.put("filetype","TEXT")
 			.put("byte_size","INTEGER")
-			.put("datasetid","TEXT").put("additionalmetadata","JSONB")
+			.put("datasetid","TEXT")
+			.put("additionalmetadata","JSONB")
 			.put("primary_key", "id");
 			//.put("foreign_key", "datasetid").put("ref_key", "id")
 			//.put("ref_table", "dataset");
