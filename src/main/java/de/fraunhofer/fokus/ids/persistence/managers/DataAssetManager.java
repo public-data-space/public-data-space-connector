@@ -334,6 +334,18 @@ public class DataAssetManager {
 										j++;
 									}
 								}
+								
+								Set<String> withoutDuplicates = new HashSet<String>();
+								for (int i = 0; i < result.length; i++) {
+									withoutDuplicates.add(result[i]);
+								}
+								result = new String [withoutDuplicates.size()];
+								int index = 0;
+								for (String s: withoutDuplicates) {
+									result [index] = s;
+									index ++;
+								}
+								
 		
 								Tuple params = Tuple.tuple().addStringArray(result).addString(dataAsset.getResourceId());
 		
@@ -343,6 +355,7 @@ public class DataAssetManager {
 									} else {
 										JsonObject jO = new JsonObject();
 										String [] newTags = params.getStringArray(0);
+										
 										String tagsResult = "";
 										for (int i = 0; i<newTags.length; i++) {
 											tagsResult += newTags[i] + ", ";
