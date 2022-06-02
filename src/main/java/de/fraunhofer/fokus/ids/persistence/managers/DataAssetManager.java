@@ -305,8 +305,12 @@ public class DataAssetManager {
 	               JsonObject env = ar2.result();
 	               String annif = env.getString(ApplicationConfig.ENV_ANNIF, ApplicationConfig.DEFAULT_ANNIF);
 	               //webClient.postAbs("https://annif.apps.osc.fokus.fraunhofer.de/v1/projects/data-theme-nn-ensemble-en/suggest")
+	               boolean isHTTPS = false;
+	               if (annif.contains("https")) {
+	            	   isHTTPS = true;
+	               }
 	               webClient.postAbs(annif)
-	               		.ssl(true).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
+	               		.ssl(isHTTPS).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
 							if (ar.succeeded()) {
 		
 								HttpResponse<io.vertx.core.buffer.Buffer> response = ar.result();
