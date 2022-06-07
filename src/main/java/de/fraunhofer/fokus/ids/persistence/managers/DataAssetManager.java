@@ -305,8 +305,12 @@ public class DataAssetManager {
 	               JsonObject env = ar2.result();
 	               String annif = env.getString(ApplicationConfig.ENV_ANNIF, ApplicationConfig.DEFAULT_ANNIF);
 	               //webClient.postAbs("https://annif.apps.osc.fokus.fraunhofer.de/v1/projects/data-theme-nn-ensemble-en/suggest")
+	               boolean isHTTPS = false;
+	               if (annif.contains("https")) {
+	            	   isHTTPS = true;
+	               }
 	               webClient.postAbs(annif)
-	               		.ssl(true).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
+	               		.ssl(isHTTPS).putHeader("content-type", "multipart/form-data").sendForm(form, ar -> {
 							if (ar.succeeded()) {
 		
 								HttpResponse<io.vertx.core.buffer.Buffer> response = ar.result();
@@ -330,6 +334,18 @@ public class DataAssetManager {
 										j++;
 									}
 								}
+								
+								Set<String> withoutDuplicates = new HashSet<String>();
+								for (int i = 0; i < result.length; i++) {
+									withoutDuplicates.add(result[i]);
+								}
+								result = new String [withoutDuplicates.size()];
+								int index = 0;
+								for (String s: withoutDuplicates) {
+									result [index] = s;
+									index ++;
+								}
+								
 		
 								Tuple params = Tuple.tuple().addStringArray(result).addString(dataAsset.getResourceId());
 		
@@ -339,6 +355,7 @@ public class DataAssetManager {
 									} else {
 										JsonObject jO = new JsonObject();
 										String [] newTags = params.getStringArray(0);
+										
 										String tagsResult = "";
 										for (int i = 0; i<newTags.length; i++) {
 											tagsResult += newTags[i] + ", ";

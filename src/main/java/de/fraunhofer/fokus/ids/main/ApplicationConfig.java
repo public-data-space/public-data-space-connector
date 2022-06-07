@@ -30,7 +30,8 @@ public class ApplicationConfig {
     
     public static final String ENV_ANNIF = "ANNIF";
     public static final String DEFAULT_ANNIF = "https://api.annif.org/v1/projects/yso-mllm-en/suggest";
-    
+    //https://api.annif.org/v1/projects/yso-mllm-en/suggest
+    //https://annif-ids.fokus.fraunhofer.de/annif/v1/projects/data-theme-nn-ensemble-en/suggest
     
    
     
