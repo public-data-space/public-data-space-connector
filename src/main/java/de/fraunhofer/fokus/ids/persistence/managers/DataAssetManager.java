@@ -272,7 +272,7 @@ public class DataAssetManager {
 							.addString(checkNull(distribution.getTitle()))
 							.addString(checkNull(distribution.getDescription()))
 							.addString(checkNull(distribution.getPublisher()))
-							.addString(checkNull(distribution.getFilename()))
+							.addString(checkNull(distribution.getFilename().replace('%', '_')))
 							.addString(checkNull(distribution.getFiletype()))
 							.addInteger(Integer.parseInt(checkNull(distributionAdditionalData.getJsonArray("byte_size").getString(0))))
 							.addString(checkNull(dataAsset.getResourceId()));
