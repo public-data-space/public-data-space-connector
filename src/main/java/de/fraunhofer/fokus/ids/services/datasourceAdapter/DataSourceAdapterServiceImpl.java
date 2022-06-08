@@ -22,14 +22,6 @@ import de.fraunhofer.fokus.ids.persistence.util.DatabaseConnector;
 
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
- *  @newest_changeses_and_notes_of_Zead:
- *         @properties:
- *         @methods: (#some_key is a key of the adjustment that you can search for.)
- *         	@getFile (edited)
- *         		#getFileURLAndreturnItAsStringFromJson
- *         			Firstly I think there is no need for Download method.
- *         			I require the file path from the adapter, but I use post to pass the json Object.
- *         			After getting the replay I extract the path value as String and return it.
  */
 public class DataSourceAdapterServiceImpl implements DataSourceAdapterService {
 
@@ -136,17 +128,15 @@ public class DataSourceAdapterServiceImpl implements DataSourceAdapterService {
 			if (reply.succeeded()) {
 				LOGGER.debug("Port: " + reply.result().getInteger("port"));
 				LOGGER.debug("Host: " + reply.result().getString("host"));
-				//#getFileURLAndreturnItAsStringFromJson
-				//download(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/", request,
-				webClient.post(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/").sendJsonObject(request,
+				download(reply.result().getInteger("port"), reply.result().getString("host"), "/getFile/", request,
 						adapterReply -> {
-							if (adapterReply.succeeded()) {
-								resultHandler.handle(Future.succeededFuture(adapterReply.result().bodyAsJsonObject().getString("link")));
-							} else {
-								LOGGER.error(adapterReply.cause());
-								resultHandler.handle(Future.failedFuture(adapterReply.cause()));
-							}
-						});
+					if (adapterReply.succeeded()) {
+						resultHandler.handle(Future.succeededFuture(adapterReply.result()));
+					} else {
+						LOGGER.error(adapterReply.cause());
+						resultHandler.handle(Future.failedFuture(adapterReply.cause()));
+					}
+				});
 			} else {
 				LOGGER.error(reply.cause());
 				resultHandler.handle(Future.failedFuture(reply.cause()));
