@@ -74,7 +74,7 @@ public class DataSourceAdapterDownloadService {
                         .putHeader("content-type", "multipart/form-data;charset=UTF-8")
                         .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
 
-                webClient.post(port, host, "/getLink")
+                webClient.post(port, host, "/Resource")
                         .as(BodyCodec.pipe(response))
                         .sendJsonObject(linkData,
                         adapterReply -> {
@@ -86,7 +86,7 @@ public class DataSourceAdapterDownloadService {
                         });
             }
             else{
-                this.LOGGER.error("Could not get adapter data from Data base");
+                this.LOGGER.error("Could not get adapter data from Database");
             }
         });
     }

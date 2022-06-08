@@ -136,7 +136,7 @@ public class DataAssetManager {
 					Promise<Dataset> promise = Promise.promise();
 					datasetFutureList.add(promise.future());
 					//#formatDataAssetDataAsDatasetObject
-					Dataset da = Json.decodeValue(this.buildDataAssetAdditionalData((JsonObject)iterator.next()), Dataset.class);
+					Dataset da = Json.decodeValue(iterator.next().toString(), Dataset.class);
 					buildDataset(da, promise);
 				}
 				CompositeFuture.all(datasetFutureList).onComplete(ac -> {
@@ -165,7 +165,7 @@ public class DataAssetManager {
 			if(reply2.succeeded()){
 				//#formatDistributionDataAsDistributionObject
 				Set<Distribution> dists = reply2.result().stream().map(jO ->
-						Json.decodeValue(this.buildDistributionAdditionalData(jO), Distribution.class)).collect(Collectors.toSet());
+						Json.decodeValue(jO.toString(), Distribution.class)).collect(Collectors.toSet());
 				da.setDistributions(dists);
 				next.handle(Future.succeededFuture(da));
 			} else {
@@ -247,7 +247,7 @@ public class DataAssetManager {
 				.addString(checkNull(dataAsset.getLicense()))
 				.addString(checkNull(dataAsset.getTitle()))
 				.addString(checkNull(dataAsset.getDescription()))
-				.addString(checkNull(dataAsset.getPublisher()))
+				.addString("zenodo.org")
 				.addInteger(dataAsset.getStatus() == null ? DataAssetStatus.UNAPPROVED.ordinal() : dataAsset.getStatus().ordinal())
 				.addStringArray(dataAsset.getTags() == null ||dataAsset.getTags().isEmpty() ? new String[0] : dataAsset.getTags().toArray(new String[0]))
 				.addString(checkNull(dataAsset.getVersion()))
@@ -271,7 +271,7 @@ public class DataAssetManager {
 							.addString(checkNull(distribution.getLicense()))
 							.addString(checkNull(distribution.getTitle()))
 							.addString(checkNull(distribution.getDescription()))
-							.addString(checkNull(distribution.getPublisher()))
+							.addString("zenodo.org")
 							.addString(checkNull(distribution.getFilename().replace('%', '_')))
 							.addString(checkNull(distribution.getFiletype()))
 							.addInteger(Integer.parseInt(checkNull(distributionAdditionalData.getJsonArray("byte_size").getString(0))))
