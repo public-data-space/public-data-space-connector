@@ -74,7 +74,7 @@ public class DataSourceAdapterDownloadService {
                         .putHeader("content-type", "multipart/form-data;charset=UTF-8")
                         .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
 
-                webClient.post(port, host, "/Resource")
+                webClient.post(port, host, "/resource")
                         .as(BodyCodec.pipe(response))
                         .sendJsonObject(linkData,
                         adapterReply -> {
