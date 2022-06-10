@@ -24,6 +24,7 @@ import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
@@ -56,7 +57,7 @@ import java.util.*;
  *          @methods: (#some_key is a key of the adjustment that you can search for.)
  *               @createHttpServer (edited)
  *                   #apiToDownloadTheLink
- *                       add a new gate to handle download link
+ *                       add a new gate to handle download file
  */
 public class MainVerticle extends AbstractVerticle {
     private Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class.getName());
@@ -217,11 +218,9 @@ public class MainVerticle extends AbstractVerticle {
                         .addHandlerByOperationId("getDataAssetId", routingContext ->
                         dataAssetController.getById(Long.parseLong(routingContext.request().getParam("id")),result -> reply(result, routingContext.response())))
                         //#apiToDownloadTheLink
-                        .addHandlerByOperationId("getResourceLink", routingContext ->
-                                dataAssetController.resource(routingContext.request().getParam("dataSourceType"),
-                                        routingContext.request().getParam("dataAssetId"),
-                                        Integer.parseInt(routingContext.request().getParam("distributionId")),
-                                        result -> reply(result, routingContext.response())))
+                        .addHandlerByOperationId("getResource", routingContext ->
+                            connectorController.resource(Long.parseLong(routingContext.request().getParam("distributionId")),
+                                     routingContext.request().getParam("dataSourceType"), routingContext.response()))
 
                         .addHandlerByOperationId("tagsDataAssetId", routingContext ->
                         dataAssetController.generateTags(Long.parseLong(routingContext.request().getParam("id")), result -> reply(result, routingContext.response())))

@@ -25,12 +25,6 @@ import java.util.*;
 
 /**
  * @author Vincent Bohlen, vincent.bohlen@fokus.fraunhofer.de
- *  @newest_changeses_and_notes_of_Zead:
- *       @properties:
- *       @methods: (#some_key is a key of the adjustment that you can search for.)
- *           @resource: (new method)
- *               For downloading file I call getFile Method from dataSourceAdapterService and pass
- *               dataset -> resourceid and distribution -> id
  */
 public class DataAssetController {
 
@@ -366,12 +360,4 @@ public class DataAssetController {
 			}
 		});
 	}
-
-    public void resource(String dataSourceName, String dataAssetId, int distributionId, Handler<AsyncResult<String>> resultHandler) {
-        JsonObject request = new JsonObject()
-                .put("dataAssetId", dataAssetId.replace("<slash>", "/"))
-                .put("distributionId", distributionId);
-        dataSourceAdapterService.getFile(dataSourceName, request, result -> resultHandler.handle(Future.succeededFuture(result.result())));
-    }
-
 }

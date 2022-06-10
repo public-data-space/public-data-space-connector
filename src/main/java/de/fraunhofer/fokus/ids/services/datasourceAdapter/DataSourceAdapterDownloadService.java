@@ -59,6 +59,37 @@ public class DataSourceAdapterDownloadService {
             }
         });
     }
+
+    public void downloadFile(String dataSourceType, String resourceId, String dataAssetId, String fileName, HttpServerResponse response){
+        getAdapter(dataSourceType, result -> {
+            if(result.succeeded()){
+                int port = result.result().getInteger("port");
+                String host = result.result().getString("host");
+                JsonObject linkData = new JsonObject()
+                        .put("resourceId", resourceId)
+                        .put("dataAssetId", dataAssetId)
+                        .put("name", fileName);
+
+                response.putHeader("Transfer-Encoding", "chunked")
+                        .putHeader("content-type", "multipart/form-data;charset=UTF-8")
+                        .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+
+                webClient.post(port, host, "/resource")
+                        .as(BodyCodec.pipe(response))
+                        .sendJsonObject(linkData,
+                        adapterReply -> {
+                            if (adapterReply.succeeded()) {
+                                LOGGER.info("File sent to client. response status code is: " + adapterReply.result().statusCode());
+                            } else {
+                                LOGGER.error("Some thing went wrong. Message is: " + adapterReply.cause().getMessage());
+                            }
+                        });
+            }
+            else{
+                this.LOGGER.error("Could not get adapter data from Database");
+            }
+        });
+    }
     
     private void getAdapter(String name, Handler<AsyncResult<JsonObject>> resultHandler) {
 

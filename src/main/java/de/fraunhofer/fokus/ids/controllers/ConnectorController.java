@@ -282,4 +282,16 @@ public class ConnectorController {
 			response.setStatusCode(500).end();
 		}
 	}
+
+	public void resource(long distributionId, String dataSourceType, HttpServerResponse response) {
+		dataAssetManager.findDistributionById(distributionId, distReply -> {
+			if(distReply.succeeded()){
+				Distribution distribution = Json.decodeValue(distReply.result().toString(), Distribution.class);
+				dataSourceAdapterDownloadService.downloadFile(dataSourceType, distribution.getResourceId(), distribution.getDatasetId(),
+						distribution.getFilename(), response);
+			}else {
+				this.LOGGER.error("Could not get distribution from DB.");
+			}
+		});
+	}
 }

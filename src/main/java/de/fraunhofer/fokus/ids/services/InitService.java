@@ -54,8 +54,8 @@ public class InitService{
 			.put("created_at","TIMESTAMP")
 			.put("updated_at","TIMESTAMP")
 			.put("username","TEXT")
-			.put("password","TEXT");
-			//.put("primary_key", "id");
+			.put("password","TEXT")
+			.put("primary_key", "id");
 
 	private final JsonObject dataset = new JsonObject()
 			.put("id","SERIAL")
@@ -93,9 +93,10 @@ public class InitService{
 			.put("byte_size","INTEGER")
 			.put("datasetid","TEXT")
 			.put("additionalmetadata","JSONB")
-			.put("primary_key", "id");
-			//.put("foreign_key", "datasetid").put("ref_key", "id")
-			//.put("ref_table", "dataset");
+			.put("primary_key", "id")
+			.put("foreign_key", "datasetid")
+			.put("ref_key", "resourceid")
+			.put("ref_table", "dataset");
 
 	private final JsonObject datasource = new JsonObject().put("id","SERIAL")
 			.put("created_at","TIMESTAMP")
@@ -212,6 +213,7 @@ public class InitService{
 			//#Set_all_Foreign_keys
 			//setForeignKeys("distribution", distribution);
 			setForeignKeys("dataset", dataset);
+			setForeignKeys("distribution", distribution);
 			setForeignKeys("job", job);
 			setForeignKeys("containers", containers);
 		}};
