@@ -2,13 +2,13 @@
 
 ### Prepare connector
 1. Clone and build the backend  \
-a) `git clone git@gitlab.fokus.fraunhofer.de:public-data-space/public-data-space-connector.git ` \
+a) `git clone https://github.com/public-data-space/public-data-space-connector.git` \
 b) ` mvn clean package `
 2. Clone and build the zenodo adapter \
-a) ` git clone git@gitlab.fokus.fraunhofer.de:public-data-space/public-data-space-zenodo-adapter.git ` \
+a) ` git clone https://github.com/public-data-space/public-data-space-zenodo-adapter.git` \
 b) ` mvn clean package `
 3. Clone and build the frontend \
-a) ` git clone git@gitlab.fokus.fraunhofer.de:public-data-space/public-data-space-ui.git ` \
+a) ` git clone  https://github.com/public-data-space/public-data-space-ui.git ` \
 b) ` npm install `
 
 ### Start connector without docker-compose
